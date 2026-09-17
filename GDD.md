@@ -27,7 +27,7 @@ A digger stands on an endless column of coloured blocks. Tap left, right or down
 
 ## 2. Reference & Inspiration
 
-![Concept mock (own work) — the player dug a red group; the blue group above lost its support, shakes for `fallDelay`, then drops two cells onto a blue pair: 5 ≥ 4, clear, chain ×1. The player in column 4 is never in its path.](images/reference.png)
+![Concept mock (own work) — the player dug a red group; the blue group above lost its support, shakes for `fallDelay`, then drops two cells onto a blue pair: 5 ≥ 4, clear, chain ×1. The player in column 4 is never in its path.](reference.png)
 
 - **Primary reference (rules):** *Mr. Driller* (Namco, 1999). Taking: colour-group digging, group-fall with hang time, four-plus clear on merge, air meter with capsules, X-blocks that cost air. Not taking: lives and continues, fixed levels and goals, character roster.
 - **Primary reference (classic):** *Digger* (Windmill Software, 1983) / *Boulder Dash* (1984). Taking: the one-screen "something above me is about to fall" tension and cell-based digging. Not taking: enemies, gems, horizontal levels.
@@ -128,7 +128,7 @@ flowchart TD
 
 ## 5. Screens & UI
 
-![Screen layouts (own work) — Title, HUD, Pause, Game Over](images/screens-sketch.png)
+![Screen layouts (own work) — Title, HUD, Pause, Game Over](screens-sketch.png)
 
 1. **Title** — game name, "TAP TO DIG", best depth ("BEST 312 m"). Tap starts a run and the panel fades out; the grid is already visible behind it.
 2. **HUD (Playing)** — top-left: depth in metres; top-right: score; full-width air bar under them, turning red below 25 %; a "×N" chain label pops near the player during a chain. Deliberately absent: lives, pause button (polish), timer, minimap.
