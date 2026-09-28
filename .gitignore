@@ -56,3 +56,6 @@ CLAUDE.md
 # ---------- OS ----------
 .DS_Store
 Thumbs.db
+
+# packaged builds
+*.zip

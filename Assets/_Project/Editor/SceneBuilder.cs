@@ -28,7 +28,7 @@ namespace Strata.EditorTools
 
         private static readonly Color Ink = new Color(0.13f, 0.15f, 0.18f);
         private static readonly Color Paper = new Color(0.95f, 0.94f, 0.91f);
-        private static readonly Color Dim = new Color(0f, 0f, 0f, 0.6f);
+        private static readonly Color Dim = new Color(0f, 0f, 0f, 0.72f);
         private static readonly Color Cyan = new Color(0.18f, 0.90f, 0.84f);
         private static readonly Color Red = new Color(0.90f, 0.28f, 0.30f);
         private static readonly Color Blue = new Color(0.24f, 0.48f, 0.98f);
@@ -316,12 +316,13 @@ namespace Strata.EditorTools
             barBackground.anchoredPosition = new Vector2(0f, -140f);
             barBackground.sizeDelta = new Vector2(-80f, 30f);
             var barBackgroundImage = barBackground.gameObject.AddComponent<Image>();
+            barBackgroundImage.sprite = LoadSprite("pixel");
             barBackgroundImage.color = new Color(0.16f, 0.19f, 0.25f);
             barBackgroundImage.raycastTarget = false;
             RectTransform bar = MakeRect("AirBar", barBackground);
             Stretch(bar);
             var barImage = bar.gameObject.AddComponent<Image>();
-            barImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            barImage.sprite = LoadSprite("pixel");
             barImage.type = Image.Type.Filled;
             barImage.fillMethod = Image.FillMethod.Horizontal;
             barImage.fillOrigin = 0;
@@ -407,6 +408,8 @@ namespace Strata.EditorTools
             RectTransform rt = MakeRect(name, parent);
             Stretch(rt);
             var image = rt.gameObject.AddComponent<Image>();
+            image.sprite = LoadSprite("pixel");   // a real (white) sprite: an Image without one did not render the overlay
+            image.type = Image.Type.Simple;
             image.color = color;
             image.raycastTarget = false;
             return rt;
