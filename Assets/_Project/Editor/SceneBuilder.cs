@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.SceneManagement;
@@ -98,7 +99,9 @@ namespace Strata.EditorTools
             if (config != null) return config;
             config = ScriptableObject.CreateInstance<GameConfig>();
             AssetDatabase.CreateAsset(config, ConfigPath);
-            return config;
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(ConfigPath, ImportAssetOptions.ForceSynchronousImport);
+            return AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
         }
 
         private static GameObject BuildBlockPrefab()
@@ -451,30 +454,28 @@ namespace Strata.EditorTools
 
         // ------------------------------------------------------------------ helpers
 
-        /// <summary>Assigns a [SerializeField] private field by name through SerializedObject.</summary>
-        private static void SetRef(Object target, string field, Object value)
+        /// <summary>
+        /// Assigns a [SerializeField] private field by name. Written directly through reflection rather than
+        /// SerializedProperty.objectReferenceValue, which silently drops ScriptableObject references in this setup.
+        /// </summary>
+        private static void SetRef(Object target, string field, object value)
         {
-            var so = new SerializedObject(target);
-            SerializedProperty property = so.FindProperty(field);
-            if (property == null)
+            FieldInfo info = target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (info == null)
             {
-                Debug.LogError($"[Strata] {target.GetType().Name} has no serialized field '{field}'");
+                Debug.LogError($"[Strata] {target.GetType().Name} has no field '{field}'");
                 return;
             }
-            property.objectReferenceValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
+            info.SetValue(target, value);
+            EditorUtility.SetDirty(target);
+            if (PrefabUtility.IsPartOfPrefabInstance(target)) PrefabUtility.RecordPrefabInstancePropertyModifications(target);
         }
 
         private static void SetClips(AudioManager audio, params string[] names)
         {
-            var so = new SerializedObject(audio);
-            SerializedProperty clips = so.FindProperty("clips");
-            clips.arraySize = names.Length;
-            for (int i = 0; i < names.Length; i++)
-            {
-                clips.GetArrayElementAtIndex(i).objectReferenceValue = LoadClip(names[i]);
-            }
-            so.ApplyModifiedPropertiesWithoutUndo();
+            var clips = new AudioClip[names.Length];
+            for (int i = 0; i < names.Length; i++) clips[i] = LoadClip(names[i]);
+            SetRef(audio, "clips", clips);
         }
 
         /// <summary>Company / product / orientation / window size / Android settings (GDD §7). Also run before every build.</summary>
@@ -490,7 +491,7 @@ namespace Strata.EditorTools
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.strata.game");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-            PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)24;
+            PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)25;
             EditorSettings.defaultBehaviorMode = EditorBehaviorMode.Mode2D;
             SetActiveInputHandlingToLegacy();
         }
