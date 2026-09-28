@@ -59,3 +59,5 @@ Thumbs.db
 
 # packaged builds
 *.zip
+/[Uu]tmp/
+/.utmp/
