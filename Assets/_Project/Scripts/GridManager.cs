@@ -286,13 +286,14 @@ namespace Strata
         }
 
         /// <summary>
-        /// shake → drop one cell → re-check → (land) → repeat until settled → clear merged groups → repeat.
+        /// Settle loop: every unsupported group hangs and shakes for fallDelay (its own timer), then drops one cell
+        /// per fallDurationPerCell until it lands. When the grid is still, merged groups clear and the loop repeats.
         /// Runs while the player keeps moving; dodging a shaking group is the core skill.
         /// </summary>
         private IEnumerator CascadeRoutine()
         {
-            var moved = new HashSet<Vector2Int>();           // current cells of blocks that moved this cascade
-            var alreadyFalling = new HashSet<Vector2Int>();  // cells that fell in the previous step (no new delay)
+            var moved = new HashSet<Vector2Int>();                              // current cells of blocks that moved this cascade
+            var unsupportedSince = new Dictionary<Vector2Int, float>();          // cell → Time.time its group lost support
 
             while (cascadeRequested)
             {
@@ -301,41 +302,35 @@ namespace Strata
                 // ---- settle: drop until nothing is unsupported ----
                 while (true)
                 {
-                    List<List<Vector2Int>> falling = FindUnsupportedGroups();
-                    if (falling.Count == 0) break;
+                    List<List<Vector2Int>> unsupported = FindUnsupportedGroups();
+                    if (unsupported.Count == 0) break;
 
-                    // newly unsupported groups hang for fallDelay first (pillar 1: every crush is telegraphed)
-                    bool anyNew = false;
-                    foreach (List<Vector2Int> group in falling)
+                    float now = Time.time;
+                    var dropping = new HashSet<Vector2Int>();
+                    var tracked = new Dictionary<Vector2Int, float>();
+                    foreach (List<Vector2Int> group in unsupported)
                     {
-                        if (ContainsAny(alreadyFalling, group)) continue;
-                        anyNew = true;
+                        float since = UnsupportedSince(group, unsupportedSince, now);
+                        bool drops = now - since >= config.fallDelay;
                         foreach (Vector2Int c in group)
                         {
-                            if (views.TryGetValue(c, out Block block)) block.StartShake(config.shakeAmplitude);
+                            tracked[c] = since;
+                            if (drops) dropping.Add(c);
+                            else if (views.TryGetValue(c, out Block block)) block.StartShake(config.shakeAmplitude);
                         }
                     }
-                    if (anyNew)
-                    {
-                        yield return new WaitForSeconds(config.fallDelay);
-                        StopAllShakes();
-                        falling = FindUnsupportedGroups();   // the player may have changed things meanwhile
-                        if (falling.Count == 0) break;
-                    }
+                    unsupportedSince = tracked;   // groups that landed meanwhile are forgotten
 
-                    var fallingCells = new HashSet<Vector2Int>();
-                    foreach (List<Vector2Int> group in falling)
-                        foreach (Vector2Int c in group) fallingCells.Add(c);
+                    if (dropping.Count == 0)
+                    {
+                        yield return null;        // everything unsupported is still shaking (pillar 1: telegraphed)
+                        continue;
+                    }
 
                     // crush: a block whose next cell is the player's cell ends the run
-                    bool crush = false;
-                    foreach (Vector2Int c in fallingCells)
+                    if (WouldCrushPlayer(dropping))
                     {
-                        if (c + Down == player.Cell) { crush = true; break; }
-                    }
-                    if (crush)
-                    {
-                        foreach (Vector2Int c in fallingCells)
+                        foreach (Vector2Int c in dropping)
                         {
                             if (views.TryGetValue(c, out Block block)) block.AnimateFall(c + Down, config.fallDurationPerCell);
                         }
@@ -344,40 +339,47 @@ namespace Strata
                     }
 
                     // move data, lowest cells first so every target is free by the time its block moves
-                    var ordered = new List<Vector2Int>(fallingCells);
+                    var ordered = new List<Vector2Int>(dropping);
                     ordered.Sort((a, b) => b.y.CompareTo(a.y));
                     foreach (Vector2Int c in ordered) MoveCellDown(c);
 
-                    alreadyFalling.Clear();
+                    var shifted = new Dictionary<Vector2Int, float>();
+                    foreach (KeyValuePair<Vector2Int, float> kv in unsupportedSince)
+                    {
+                        shifted[dropping.Contains(kv.Key) ? kv.Key + Down : kv.Key] = kv.Value;
+                    }
+                    unsupportedSince = shifted;
+
                     foreach (Vector2Int c in ordered)
                     {
                         Vector2Int n = c + Down;
                         moved.Remove(c);
                         moved.Add(n);
-                        alreadyFalling.Add(n);
                         if (views.TryGetValue(n, out Block block)) block.AnimateFall(n, config.fallDurationPerCell);
                     }
                     yield return new WaitForSeconds(config.fallDurationPerCell);
 
-                    // landing feedback for cells that fell and are supported now
+                    // landing feedback for cells that dropped and are supported now
                     var stillFalling = new HashSet<Vector2Int>();
                     foreach (List<Vector2Int> group in FindUnsupportedGroups())
                         foreach (Vector2Int c in group) stillFalling.Add(c);
                     int landed = 0;
-                    foreach (Vector2Int n in alreadyFalling)
+                    foreach (Vector2Int c in ordered)
                     {
+                        Vector2Int n = c + Down;
                         if (stillFalling.Contains(n)) continue;
                         landed++;
                         if (views.TryGetValue(n, out Block block)) block.Squash(config.squashScale, config.squashDuration);
                     }
                     if (landed > 0) OnGroupLanded?.Invoke(landed);
                 }
+                StopAllShakes();
+                unsupportedSince.Clear();
 
                 // ---- merges: only groups that grew by merging clear (a big group that fell intact stays) ----
                 if (moved.Count == 0) continue;
                 List<List<Vector2Int>> toClear = FindMergedGroups(moved);
                 moved.Clear();
-                alreadyFalling.Clear();
                 if (toClear.Count == 0) continue;
 
                 Chain++;
@@ -404,9 +406,23 @@ namespace Strata
             cascade = null;
         }
 
-        private static bool ContainsAny(HashSet<Vector2Int> set, List<Vector2Int> cells)
+        /// <summary>The moment this group lost support: the earliest time recorded for any of its cells, or now.</summary>
+        private static float UnsupportedSince(List<Vector2Int> group, Dictionary<Vector2Int, float> since, float now)
         {
-            foreach (Vector2Int c in cells) if (set.Contains(c)) return true;
+            float earliest = float.MaxValue;
+            foreach (Vector2Int c in group)
+            {
+                if (since.TryGetValue(c, out float t) && t < earliest) earliest = t;
+            }
+            return earliest == float.MaxValue ? now : earliest;
+        }
+
+        private bool WouldCrushPlayer(HashSet<Vector2Int> dropping)
+        {
+            foreach (Vector2Int c in dropping)
+            {
+                if (c + Down == player.Cell) return true;
+            }
             return false;
         }
 
