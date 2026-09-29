@@ -16,7 +16,6 @@ namespace Strata
         [SerializeField] private SpriteRenderer spriteRenderer;
 
         public Vector2Int Cell { get; private set; }
-        public bool IsBusy => busy || falling || frozen;
 
         public event Action OnCrushed;
         public event Action OnLanded;

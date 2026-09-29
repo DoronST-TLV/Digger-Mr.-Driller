@@ -17,9 +17,6 @@ namespace Strata
 
         private ObjectPool<Block> pool;
 
-        public int CountActive => pool.CountActive;
-        public int CountAll => pool.CountAll;
-
         protected override void Awake()
         {
             base.Awake();

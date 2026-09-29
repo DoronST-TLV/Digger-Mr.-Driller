@@ -12,7 +12,6 @@ namespace Strata
         [SerializeField] private SpriteRenderer spriteRenderer;
 
         public Vector2Int Cell { get; private set; }
-        public CellType Type { get; private set; }
 
         private Color baseColor;
         private Coroutine shakeRoutine;
@@ -20,7 +19,6 @@ namespace Strata
 
         public void Setup(CellType type, Vector2Int cell, Sprite sprite, Color color)
         {
-            Type = type;
             baseColor = color;
             spriteRenderer.sprite = sprite;
             spriteRenderer.color = color;

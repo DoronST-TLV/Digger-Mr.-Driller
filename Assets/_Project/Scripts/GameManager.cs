@@ -17,7 +17,6 @@ namespace Strata
         [SerializeField] private PlayerController player;
         [SerializeField] private AirMeter air;
 
-        public GameConfig Config => config;
         public GameState State { get; private set; } = GameState.Title;
         public int StateChangedFrame { get; private set; } = -1;
         public int Score { get; private set; }
@@ -26,7 +25,6 @@ namespace Strata
         public int BestScore { get; private set; }
         public bool IsNewBest { get; private set; }
         public bool CanRestart { get; private set; }
-        public GameOverReason LastGameOverReason { get; private set; }
 
         public event Action<GameState> OnStateChanged;
         public event Action<int> OnScoreChanged;
@@ -123,7 +121,6 @@ namespace Strata
         public void GameOver(GameOverReason reason)
         {
             if (State == GameState.GameOver) return;
-            LastGameOverReason = reason;
             grid.Freeze();
             player.Freeze();
             air.Stop();

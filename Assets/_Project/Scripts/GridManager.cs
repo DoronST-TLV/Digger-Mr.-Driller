@@ -51,7 +51,6 @@ namespace Strata
         private bool cascadeRequested;
         private Coroutine cascade;
 
-        public int Width => config.gridWidth;
         public int Chain { get; private set; }
 
         private void Awake()
@@ -262,7 +261,7 @@ namespace Strata
 
         // ------------------------------------------------------------------ cascade
 
-        public void RequestCascade()
+        private void RequestCascade()
         {
             if (frozen) return;
             cascadeRequested = true;
