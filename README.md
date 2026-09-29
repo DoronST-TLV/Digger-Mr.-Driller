@@ -35,4 +35,8 @@ Assets/_Project/
 - **Mobile:** portrait, touch input, safe area, pause on background, Android build
 
 ## Credits
-All art and sound in this repository is our own work. Made by Doron & Aviv.
+Made by Doron & Aviv for Intro to Game Development with Unity (Tel Aviv-Yafo Academic College, 2026).
+
+Art and sound are procedural: the sprites are drawn with shapes and gradients by `Tools/make_art.py` (Pillow) and the sound effects are synthesized by `Tools/make_audio.py` (NumPy). No image- or audio-generation models were used. Run either script from the project root to regenerate the assets.
+
+Development was done with Claude Code, as the course encourages; the design decisions, testing and tuning are ours.
