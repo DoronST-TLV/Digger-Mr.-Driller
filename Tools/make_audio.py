@@ -69,3 +69,11 @@ for f in (659.25, 523.25, 392.0, 261.63):
     parts.append(s * env(len(tt), 0.005))
 save("gameover", np.concatenate(parts))
 print("audio ok")
+
+# milestone: four-note rising fanfare (25 m, 50 m, ...)
+parts = []
+for f in (523.25, 659.25, 783.99, 1046.5):
+    tt = t(0.11)
+    s = np.sin(2 * np.pi * f * tt) * 0.6 + np.sin(2 * np.pi * f * 2 * tt) * 0.25 + np.sign(np.sin(2 * np.pi * f * tt)) * 0.15
+    parts.append(s * env(len(tt), 0.004))
+save("milestone", np.concatenate(parts))

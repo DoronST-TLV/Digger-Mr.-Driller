@@ -219,6 +219,8 @@ namespace Strata.EditorTools
             var audio = audioGo.AddComponent<AudioManager>();
             var source = audioGo.AddComponent<AudioSource>();
             source.playOnAwake = false;
+            var pitchedSource = audioGo.AddComponent<AudioSource>();
+            pitchedSource.playOnAwake = false;
 
             // player
             var player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, scene);
@@ -262,7 +264,8 @@ namespace Strata.EditorTools
             SetRef(bursts, "container", burstsContainer.transform);
 
             SetRef(audio, "source", source);
-            SetClips(audio, "dig", "land", "clear", "crush", "capsule", "gameover");
+            SetRef(audio, "pitchedSource", pitchedSource);
+            SetClips(audio, "dig", "land", "clear", "crush", "capsule", "gameover", "milestone");
 
             SetRef(follow, "config", config);
             SetRef(follow, "target", player.transform);
@@ -331,6 +334,8 @@ namespace Strata.EditorTools
             barImage.raycastTarget = false;
             Text chain = MakeText("ChainText", hud, "x2", 80, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0f, 260f), new Vector2(400f, 100f), Cyan);
             chain.gameObject.SetActive(false);
+            Text milestone = MakeText("MilestoneText", hud, "25 m!", 120, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(900f, 160f), Paper);
+            milestone.gameObject.SetActive(false);
 
             // Title
             RectTransform title = MakePanel("TitlePanel", safeArea, Dim);
@@ -371,6 +376,7 @@ namespace Strata.EditorTools
             SetRef(ui, "depthText", depth);
             SetRef(ui, "scoreText", score);
             SetRef(ui, "chainText", chain);
+            SetRef(ui, "milestoneText", milestone);
             SetRef(ui, "airBar", barImage);
             SetRef(ui, "resumeButton", resume);
             SetRef(ui, "restartButton", restart);

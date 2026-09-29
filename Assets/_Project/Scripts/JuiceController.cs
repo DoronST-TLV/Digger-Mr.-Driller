@@ -15,6 +15,8 @@ namespace Strata
         [SerializeField] private GameManager gameManager;
         [SerializeField] private ScreenShake screenShake;
 
+        private int currentChain;
+
         private void OnEnable()
         {
             grid.OnDig += HandleDig;
@@ -23,6 +25,8 @@ namespace Strata
             player.OnCapsuleCollected += HandleCapsule;
             player.OnLanded += HandlePlayerLanded;
             gameManager.OnGameOver += HandleGameOver;
+            gameManager.OnMilestone += HandleMilestone;
+            grid.OnChainChanged += HandleChain;
         }
 
         private void OnDisable()
@@ -33,6 +37,8 @@ namespace Strata
             player.OnCapsuleCollected -= HandleCapsule;
             player.OnLanded -= HandlePlayerLanded;
             gameManager.OnGameOver -= HandleGameOver;
+            gameManager.OnMilestone -= HandleMilestone;
+            grid.OnChainChanged -= HandleChain;
         }
 
         private static void Play(SfxId id)
@@ -57,9 +63,14 @@ namespace Strata
             screenShake.Shake(config.landShakeStrength * weight, 0.15f);
         }
 
+        private void HandleChain(int chain) => currentChain = chain;
+
+        private void HandleMilestone(int depth) => Play(SfxId.Milestone);
+
         private void HandleCleared(Color color, List<Vector2Int> cells)
         {
-            Play(SfxId.Clear);
+            float pitch = Mathf.Min(1f + (currentChain - 1) * config.chainPitchStep, config.chainPitchMax);
+            if (AudioManager.Instance != null) AudioManager.Instance.Play(SfxId.Clear, pitch);
             screenShake.Shake(config.clearShakeStrength, 0.2f);
             if (BurstPool.Instance == null) return;
             foreach (Vector2Int c in cells) BurstPool.Instance.Play(GridManager.CellToWorld(c), color);

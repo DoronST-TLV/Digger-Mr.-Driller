@@ -71,6 +71,14 @@ namespace Strata
         [Tooltip("Below this fraction the air bar pulses red.")]
         public float lowAirFraction = 0.25f;
 
+        [Header("Milestones & chain feedback")]
+        [Tooltip("A depth milestone pops every N rows (0 = off).")]
+        public int milestoneEveryRows = 25;
+        public float milestonePopDuration = 0.9f;
+        [Tooltip("Each chain step raises the clear sound's pitch by this much.")]
+        public float chainPitchStep = 0.12f;
+        public float chainPitchMax = 1.8f;
+
         [Header("Juice")]
         public float shakeAmplitude = 0.06f;
         public float landShakeStrength = 0.05f;

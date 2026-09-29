@@ -30,6 +30,10 @@ namespace Strata
         public event Action<int> OnScoreChanged;
         public event Action<int> OnDepthChanged;
         public event Action<GameOverReason> OnGameOver;
+        /// <summary>depth in rows of the milestone just reached (25, 50, ...)</summary>
+        public event Action<int> OnMilestone;
+
+        private int milestonesReached;
 
         private const string BestDepthKey = "BestDepth";
         private const string BestScoreKey = "BestScore";
@@ -164,6 +168,16 @@ namespace Strata
             AddScore((depth - Depth) * config.depthScore);
             Depth = depth;
             OnDepthChanged?.Invoke(Depth);
+            CheckMilestone();
+        }
+
+        private void CheckMilestone()
+        {
+            if (config.milestoneEveryRows <= 0) return;
+            int reached = Depth / config.milestoneEveryRows;
+            if (reached <= milestonesReached) return;
+            milestonesReached = reached;
+            OnMilestone?.Invoke(reached * config.milestoneEveryRows);
         }
 
         private void HandleBlocksCleared(int count, int chain)

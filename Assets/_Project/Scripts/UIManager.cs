@@ -27,6 +27,7 @@ namespace Strata
         [SerializeField] private Text depthText;
         [SerializeField] private Text scoreText;
         [SerializeField] private Text chainText;
+        [SerializeField] private Text milestoneText;
         [SerializeField] private Image airBar;
 
         [Header("Pause")]
@@ -48,6 +49,7 @@ namespace Strata
         private static readonly Color AirLowDark = new Color(0.45f, 0.12f, 0.14f);
 
         private float airFraction = 1f;
+        private Coroutine milestonePop;
 
         private void OnEnable()
         {
@@ -55,6 +57,7 @@ namespace Strata
             gameManager.OnScoreChanged += HandleScore;
             gameManager.OnDepthChanged += HandleDepth;
             gameManager.OnGameOver += HandleGameOver;
+            gameManager.OnMilestone += HandleMilestone;
             grid.OnChainChanged += HandleChain;
             air.OnChanged += HandleAir;
         }
@@ -65,6 +68,7 @@ namespace Strata
             gameManager.OnScoreChanged -= HandleScore;
             gameManager.OnDepthChanged -= HandleDepth;
             gameManager.OnGameOver -= HandleGameOver;
+            gameManager.OnMilestone -= HandleMilestone;
             grid.OnChainChanged -= HandleChain;
             air.OnChanged -= HandleAir;
         }
@@ -107,6 +111,36 @@ namespace Strata
         {
             chainText.gameObject.SetActive(chain >= 2);
             chainText.text = $"x{chain}";
+        }
+
+        private void HandleMilestone(int depth)
+        {
+            if (milestonePop != null) StopCoroutine(milestonePop);
+            milestonePop = StartCoroutine(MilestonePop(depth));
+        }
+
+        /// <summary>"50 m!" pops in, settles, fades out.</summary>
+        private IEnumerator MilestonePop(int depth)
+        {
+            milestoneText.text = $"{depth} m!";
+            milestoneText.gameObject.SetActive(true);
+            RectTransform rt = milestoneText.rectTransform;
+            Color color = milestoneText.color;
+            float duration = config.milestonePopDuration;
+            for (float t = 0f; t < duration; t += Time.deltaTime)
+            {
+                float k = t / duration;
+                float scale = k < 0.25f ? Mathf.Lerp(0.5f, 1.25f, k / 0.25f) : Mathf.Lerp(1.25f, 1f, (k - 0.25f) / 0.75f);
+                rt.localScale = Vector3.one * scale;
+                color.a = k < 0.7f ? 1f : 1f - (k - 0.7f) / 0.3f;
+                milestoneText.color = color;
+                yield return null;
+            }
+            color.a = 1f;
+            milestoneText.color = color;
+            rt.localScale = Vector3.one;
+            milestoneText.gameObject.SetActive(false);
+            milestonePop = null;
         }
 
         private void HandleAir(float fraction)
